@@ -1,1 +1,1 @@
-# squart-with-openpose-plugin
+# squat-with-openpose-plugin
