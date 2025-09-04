@@ -11,6 +11,8 @@ namespace OpenPose.Example {
      * Active: whether the score of that keypoint is larger than ScoreThres
      */
     public class HumanController2D : MonoBehaviour {
+        [SerializeField] SquatCounter squatCounter;
+
 
         public int PoseKeypointsCount = 25;
         public int HandKeypointsCount = 21;
@@ -28,11 +30,18 @@ namespace OpenPose.Example {
         private List<RectTransform> rHandJoints = new List<RectTransform>();
         private List<RectTransform> faceJoints = new List<RectTransform>();
 
-        public void DrawHuman(ref OPDatum datum, int bodyIndex, float scoreThres = 0){
+        public void DrawHuman(ref OPDatum datum, int bodyIndex, float scoreThres = 0, bool evaluate = true, bool highlight = false){
+            Debug.Log("인체 데이터 감지됨");
             DrawBody(ref datum, bodyIndex, scoreThres);
             DrawHand(ref datum, bodyIndex, scoreThres);
             DrawFace(ref datum, bodyIndex, scoreThres);
-            DrawRectangles(ref datum, bodyIndex);
+            DrawRectangles(ref datum, bodyIndex, highlight);
+            // 여기서 사람별 스쿼트 업데이트
+            // 선택된 사람만 카운트/피드백
+            if (evaluate && squatCounter != null)
+            {
+                squatCounter.UpdateFromDatum(ref datum, bodyIndex);
+            }
         }
 
         private void DrawBody(ref OPDatum datum, int bodyIndex, float scoreThres){
@@ -131,7 +140,10 @@ namespace OpenPose.Example {
             }
         }
 
-        private void DrawRectangles(ref OPDatum datum, int bodyIndex){
+        private void DrawRectangles(ref OPDatum datum, int bodyIndex, bool highlight){
+
+            Color c = highlight ? new Color(1f, 0.8f, 0.2f, 1f) : Color.white;
+
             // Hand rect
             if (datum.handRectangles == null || bodyIndex >= datum.handRectangles.Count){
                 LHandRectangle.gameObject.SetActive(false);
@@ -142,10 +154,14 @@ namespace OpenPose.Example {
                 LHandRectangle.gameObject.SetActive(true);
                 LHandRectangle.localPosition = rects.left.center;
                 LHandRectangle.sizeDelta = rects.left.size;
+                var imgL = LHandRectangle.GetComponent<UnityEngine.UI.Image>();
+                if (imgL) imgL.color = c;
                 // Right
                 RHandRectangle.gameObject.SetActive(true);
                 RHandRectangle.localPosition = rects.right.center;
                 RHandRectangle.sizeDelta = rects.right.size;
+                var imgR = RHandRectangle.GetComponent<UnityEngine.UI.Image>();
+                if (imgR) imgR.color = c;
             }
 
             // Face rect
@@ -155,6 +171,9 @@ namespace OpenPose.Example {
                 FaceRectangle.gameObject.SetActive(true);
                 FaceRectangle.localPosition = datum.faceRectangles[bodyIndex].center;
                 FaceRectangle.sizeDelta = datum.faceRectangles[bodyIndex].size;
+
+                var imgF = FaceRectangle.GetComponent<UnityEngine.UI.Image>();
+                if (imgF) imgF.color = c;
             }
         }
 
